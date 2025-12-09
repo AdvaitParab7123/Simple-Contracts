@@ -1,0 +1,369 @@
+<!-- Status Change Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:status_change' pk=contract.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Contract Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Status</label>
+                        <div>{{ contract.status|status_badge }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Status</label>
+                        {{ status_form.new_status }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason (optional)</label>
+                        {{ status_form.reason }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Change Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Upload File Modal -->
+<div class="modal fade" id="uploadFileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:file_upload' pk=contract.pk %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload File</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">File</label>
+                        {{ file_upload_form.file }}
+                        <div class="form-text">Max size: 20MB. Supported: PDF, DOC, DOCX, XLSX, etc.</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ file_upload_form.is_primary }}
+                            <label class="form-check-label">Set as primary document</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (optional)</label>
+                        {{ file_upload_form.description }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Version Modal -->
+<div class="modal fade" id="addVersionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:version_create' pk=contract.pk %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Version</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Version Label</label>
+                        {{ version_form.label }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">File (optional)</label>
+                        {{ version_form.file }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        {{ version_form.notes }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Version</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Request Approval Modal -->
+<div class="modal fade" id="requestApprovalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:approval_request' pk=contract.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Request Additional Approval</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Approver</label>
+                        {{ approval_form.approver }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        {{ approval_form.reason }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Due Date (optional)</label>
+                        {{ approval_form.due_date }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Request Approval</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Share Contract Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:share' pk=contract.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Share Contract</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Share with</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="share_type" value="user" id="shareUser" checked>
+                            <label class="form-check-label" for="shareUser">Specific User</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="share_type" value="department" id="shareDept">
+                            <label class="form-check-label" for="shareDept">Department</label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="userSelect">
+                        <label class="form-label">User</label>
+                        {{ share_form.shared_with_user }}
+                    </div>
+                    <div class="mb-3 d-none" id="deptSelect">
+                        <label class="form-label">Department</label>
+                        {{ share_form.shared_with_department }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Access Level</label>
+                        {{ share_form.access_level }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Share</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Clause Modal -->
+<div class="modal fade" id="addClauseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:clause_create' pk=contract.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Clause</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ clause_form.use_playbook }}
+                            <label class="form-check-label">Use from Clause Playbook</label>
+                        </div>
+                    </div>
+                    <div class="mb-3 playbook-select d-none">
+                        <label class="form-label">Select Playbook Entry</label>
+                        {{ clause_form.playbook_entry }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Label</label>
+                        {{ clause_form.label }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Clause Text</label>
+                        {{ clause_form.text }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Risk Level</label>
+                        {{ clause_form.risk_level }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Clause</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Deviation Modal -->
+<div class="modal fade" id="addDeviationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:deviation_create' pk=contract.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Deviation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Related Clause (optional)</label>
+                        {{ deviation_form.clause }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ deviation_form.description }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Risk Level</label>
+                        {{ deviation_form.risk_level }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Justification</label>
+                        {{ deviation_form.justification }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Deviation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Risk Modal -->
+<div class="modal fade" id="addRiskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:risk_create' pk=contract.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Risk Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ risk_form.description }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Severity</label>
+                        {{ risk_form.severity }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mitigation Strategy</label>
+                        {{ risk_form.mitigation }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Risk</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Signature Modal -->
+<div class="modal fade" id="addSignatureModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:signature_create' pk=contract.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Signature Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Party</label>
+                        {{ signature_form.party }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Signatory Name</label>
+                        {{ signature_form.signatory_name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        {{ signature_form.signatory_email }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone (optional)</label>
+                        {{ signature_form.signatory_phone }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Designation (optional)</label>
+                        {{ signature_form.signatory_designation }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Signature Type</label>
+                        {{ signature_form.sign_type }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Signature</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Share modal - toggle user/department fields
+    const shareUserRadio = document.getElementById('shareUser');
+    const shareDeptRadio = document.getElementById('shareDept');
+    const userSelect = document.getElementById('userSelect');
+    const deptSelect = document.getElementById('deptSelect');
+    
+    if (shareUserRadio && shareDeptRadio) {
+        shareUserRadio.addEventListener('change', function() {
+            userSelect.classList.remove('d-none');
+            deptSelect.classList.add('d-none');
+        });
+        
+        shareDeptRadio.addEventListener('change', function() {
+            userSelect.classList.add('d-none');
+            deptSelect.classList.remove('d-none');
+        });
+    }
+    
+    // Clause modal - toggle playbook select
+    const usePlaybook = document.querySelector('[name="use_playbook"]');
+    const playbookSelect = document.querySelector('.playbook-select');
+    
+    if (usePlaybook && playbookSelect) {
+        usePlaybook.addEventListener('change', function() {
+            playbookSelect.classList.toggle('d-none', !this.checked);
+        });
+    }
+});
+</script>
+

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Pulse - Contract Management{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-green: #2ecc71;
+            --primary-green-dark: #27ae60;
+            --bg-main: #f0f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --border-color: #e8eef3;
+            --sidebar-width: 60px;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-main);
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-primary);
+        }
+        
+        /* Top Navbar */
+        .top-navbar {
+            background: #ffffff;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            margin-right: 2rem;
+        }
+        
+        .navbar-brand .brand-net {
+            color: var(--primary-green);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        
+        .navbar-brand .brand-core {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        
+        .navbar-page-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            padding-left: 1rem;
+            border-left: 1px solid var(--border-color);
+        }
+        
+        .navbar-search {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .navbar-search .search-input {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            width: 100%;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+        
+        .navbar-search .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .navbar-search .search-input:focus {
+            outline: none;
+            border-color: var(--primary-green);
+        }
+        
+        .navbar-search {
+            position: relative;
+        }
+        
+        .navbar-search i {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - 56px);
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1rem 0;
+            z-index: 100;
+        }
+        
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .sidebar-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .sidebar-link:hover {
+            background: var(--bg-main);
+            color: var(--text-primary);
+        }
+        
+        .sidebar-link.active {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--primary-green);
+        }
+        
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 24px;
+            background: var(--primary-green);
+            border-radius: 0 3px 3px 0;
+        }
+        
+        .sidebar-link i {
+            font-size: 1.25rem;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+            padding: 0;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="top-navbar">
+        <a class="navbar-brand" href="/">
+            <span class="brand-net">net</span><span class="brand-core">core</span>
+        </a>
+        <span class="navbar-page-title">{% block page_title %}Home{% endblock %}</span>
+        
+        <div class="navbar-search">
+            <i class="bi bi-search"></i>
+            <input type="text" class="search-input" placeholder="Search">
+        </div>
+        
+    </nav>
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <a href="{% url 'contracts:dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" title="Home">
+                <i class="bi bi-house-door"></i>
+            </a>
+            <a href="{% url 'contracts:list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'list' %}active{% endif %}" title="Contracts">
+                <i class="bi bi-file-earmark-text"></i>
+            </a>
+            <a href="{% url 'contracts:approvals' %}" class="sidebar-link {% if request.resolver_match.url_name == 'approvals' %}active{% endif %}" title="Approvals">
+                <i class="bi bi-check2-square"></i>
+            </a>
+            {% if is_legal_admin %}
+            <a href="{% url 'contracts:configurations' %}" class="sidebar-link {% if 'configurations' in request.path %}active{% endif %}" title="Settings">
+                <i class="bi bi-gear"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

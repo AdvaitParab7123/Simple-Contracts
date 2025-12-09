@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+{% load contracts_extras %}
+{% load static %}
+
+{% block page_title %}Configurations{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'contracts/css/contracts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>Configurations</h1>
+    </div>
+    
+    <!-- Config Buttons Grid -->
+    <div class="config-grid">
+        <button class="config-btn active" id="types-tab" data-bs-toggle="tab" data-bs-target="#types" type="button">
+            <div class="config-btn-icon">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div class="config-btn-content">
+                <span class="config-btn-title">Contract Types</span>
+                <span class="config-btn-count">{{ contract_types|length }} items</span>
+            </div>
+        </button>
+        <button class="config-btn" id="tags-tab" data-bs-toggle="tab" data-bs-target="#tags" type="button">
+            <div class="config-btn-icon">
+                <i class="bi bi-tags"></i>
+            </div>
+            <div class="config-btn-content">
+                <span class="config-btn-title">Tags</span>
+                <span class="config-btn-count">{{ tags|length }} items</span>
+            </div>
+        </button>
+        <button class="config-btn" id="departments-tab" data-bs-toggle="tab" data-bs-target="#departments" type="button">
+            <div class="config-btn-icon">
+                <i class="bi bi-building"></i>
+            </div>
+            <div class="config-btn-content">
+                <span class="config-btn-title">Departments</span>
+                <span class="config-btn-count">{{ departments|length }} items</span>
+            </div>
+        </button>
+        <button class="config-btn" id="playbook-tab" data-bs-toggle="tab" data-bs-target="#playbook" type="button">
+            <div class="config-btn-icon">
+                <i class="bi bi-book"></i>
+            </div>
+            <div class="config-btn-content">
+                <span class="config-btn-title">Clause Playbook</span>
+                <span class="config-btn-count">{{ playbook_entries|length }} items</span>
+            </div>
+        </button>
+    </div>
+    
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Contract Types -->
+        <div class="tab-pane fade show active" id="types">
+            <div class="card">
+                <div class="card-header">
+                    <span>Contract Types</span>
+                    <button class="btn-primary-green btn-sm" data-bs-toggle="modal" data-bs-target="#addTypeModal">
+                        <i class="bi bi-plus"></i> Add Type
+                    </button>
+                </div>
+                {% if contract_types %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type in contract_types %}
+                        <tr>
+                            <td class="fw-semibold">{{ type.name }}</td>
+                            <td class="text-muted">{{ type.description|truncatechars:50|default:"-" }}</td>
+                            <td>
+                                {% if type.active %}
+                                <span class="badge badge-active">Active</span>
+                                {% else %}
+                                <span class="badge badge-draft">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="post" action="{% url 'contracts:config_type_delete' pk=type.pk %}"
+                                      onsubmit="return confirm('Delete this contract type?');" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <h5>No contract types defined</h5>
+                    <p>Create contract types to categorize your contracts.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Tags -->
+        <div class="tab-pane fade" id="tags">
+            <div class="card">
+                <div class="card-header">
+                    <span>Tags</span>
+                    <button class="btn-primary-green btn-sm" data-bs-toggle="modal" data-bs-target="#addTagModal">
+                        <i class="bi bi-plus"></i> Add Tag
+                    </button>
+                </div>
+                {% if tags %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tag</th>
+                            <th>Description</th>
+                            <th>Color</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tag in tags %}
+                        <tr>
+                            <td>
+                                <span class="tag-badge" style="background-color: {{ tag.color }}20; color: {{ tag.color }};">
+                                    {{ tag.name }}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ tag.description|truncatechars:40|default:"-" }}</td>
+                            <td>
+                                <span class="color-dot" style="background-color: {{ tag.color }};"></span>
+                            </td>
+                            <td>
+                                {% if tag.active %}
+                                <span class="badge badge-active">Active</span>
+                                {% else %}
+                                <span class="badge badge-draft">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="post" action="{% url 'contracts:config_tag_delete' pk=tag.pk %}"
+                                      onsubmit="return confirm('Delete this tag?');" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-tags"></i>
+                    <h5>No tags defined</h5>
+                    <p>Create tags to organize your contracts.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Departments -->
+        <div class="tab-pane fade" id="departments">
+            <div class="card">
+                <div class="card-header">
+                    <span>Departments</span>
+                    <button class="btn-primary-green btn-sm" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+                        <i class="bi bi-plus"></i> Add Department
+                    </button>
+                </div>
+                {% if departments %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Contracts</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dept in departments %}
+                        <tr>
+                            <td class="fw-semibold">{{ dept.name }}</td>
+                            <td><span class="badge badge-draft">{{ dept.contracts.count }}</span></td>
+                            <td class="text-end">
+                                <form method="post" action="{% url 'contracts:config_dept_delete' pk=dept.pk %}"
+                                      onsubmit="return confirm('Delete this department?');" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-building"></i>
+                    <h5>No departments defined</h5>
+                    <p>Create departments to organize your teams.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Clause Playbook -->
+        <div class="tab-pane fade" id="playbook">
+            <div class="card">
+                <div class="card-header">
+                    <span>Clause Playbook</span>
+                    <button class="btn-primary-green btn-sm" data-bs-toggle="modal" data-bs-target="#addClauseModal">
+                        <i class="bi bi-plus"></i> Add Clause
+                    </button>
+                </div>
+                {% if playbook_entries %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Label</th>
+                            <th>Category</th>
+                            <th>Risk Level</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in playbook_entries %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ entry.label }}</div>
+                                <small class="text-muted">{{ entry.recommended_text|truncatechars:60 }}</small>
+                            </td>
+                            <td>{{ entry.category|default:"-" }}</td>
+                            <td>{{ entry.risk_level|risk_badge }}</td>
+                            <td>
+                                {% if entry.active %}
+                                <span class="badge badge-active">Active</span>
+                                {% else %}
+                                <span class="badge badge-draft">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="post" action="{% url 'contracts:config_clause_delete' pk=entry.pk %}"
+                                      onsubmit="return confirm('Delete this clause?');" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-book"></i>
+                    <h5>No clauses in playbook</h5>
+                    <p>Add pre-approved clauses for quick insertion.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Contract Type Modal -->
+<div class="modal fade" id="addTypeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:config_type_create' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Contract Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="active" class="form-check-input" id="typeActive" checked>
+                        <label class="form-check-label" for="typeActive">Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-primary-green">Add Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Tag Modal -->
+<div class="modal fade" id="addTagModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:config_tag_create' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Tag</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Color</label>
+                        <input type="color" name="color" class="form-control form-control-color" value="#2ecc71">
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="active" class="form-check-input" id="tagActive" checked>
+                        <label class="form-check-label" for="tagActive">Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-primary-green">Add Tag</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Department Modal -->
+<div class="modal fade" id="addDeptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:config_dept_create' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-primary-green">Add Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Clause Modal -->
+<div class="modal fade" id="addClauseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'contracts:config_clause_create' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Clause to Playbook</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Label</label>
+                            <input type="text" name="label" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Category</label>
+                            <input type="text" name="category" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Recommended Text</label>
+                            <textarea name="recommended_text" class="form-control" rows="4" required></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Risk Level</label>
+                            <select name="risk_level" class="form-select">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" name="active" class="form-check-input" id="clauseActive" checked>
+                                <label class="form-check-label" for="clauseActive">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Guidance Notes</label>
+                            <textarea name="guidance_notes" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-primary-green">Add Clause</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'contracts/js/contracts.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const configBtns = document.querySelectorAll('.config-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    configBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            configBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            tabPanes.forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+            
+            const targetId = this.getAttribute('data-bs-target');
+            const targetPane = document.querySelector(targetId);
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

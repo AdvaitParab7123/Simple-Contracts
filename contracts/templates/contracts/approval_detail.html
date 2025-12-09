@@ -1,0 +1,264 @@
+{% extends "contracts/base_contracts.html" %}
+{% load contracts_extras %}
+
+{% block contracts_content %}
+<div class="contracts-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'contracts:approvals' %}">Approvals</a></li>
+                    <li class="breadcrumb-item active">#{{ approval.pk }}</li>
+                </ol>
+            </nav>
+            <h1>Approval Request</h1>
+        </div>
+        <a href="{% url 'contracts:approvals' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to List
+        </a>
+    </div>
+</div>
+
+<div class="px-4 pb-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Approval Details -->
+            <div class="content-card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Approval Details</span>
+                    {{ approval.status|approval_status_badge }}
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Contract</label>
+                                <div>
+                                    <a href="{% url 'contracts:detail' pk=approval.contract.pk %}" class="contract-title fs-5">
+                                        {{ approval.contract.title }}
+                                    </a>
+                                    <div class="text-muted small">{{ approval.contract.contract_number }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Customer/Vendor</label>
+                                <div class="fw-medium">{{ approval.contract.customer_or_vendor_name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Requested By</label>
+                                <div class="fw-medium">
+                                    {{ approval.requested_by.get_full_name|default:approval.requested_by.username }}
+                                </div>
+                                <div class="text-muted small">{{ approval.requested_by.email }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Approver</label>
+                                <div class="fw-medium">
+                                    {{ approval.approver.get_full_name|default:approval.approver.username }}
+                                    {% if approval.approver == request.user %}
+                                    <span class="badge bg-primary ms-1">You</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">{{ approval.approver.email }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Created</label>
+                                <div>{{ approval.created_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="text-muted small">Due Date</label>
+                                <div>
+                                    {% if approval.due_date %}
+                                    <span class="{{ approval.due_date|expiry_class }}">
+                                        {{ approval.due_date|date:"M d, Y" }}
+                                        ({{ approval.due_date|days_until }} days)
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">Not specified</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if approval.reason %}
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <label class="text-muted small d-block mb-2">Reason for Request</label>
+                        <p class="mb-0">{{ approval.reason }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if approval.status != 'PENDING' and approval.decision_comment %}
+                    <div class="mt-3 p-3 {% if approval.status == 'APPROVED' %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10 rounded">
+                        <label class="text-muted small d-block mb-2">Decision Comment</label>
+                        <p class="mb-0">{{ approval.decision_comment }}</p>
+                        {% if approval.decided_at %}
+                        <small class="text-muted">Decided on {{ approval.decided_at|date:"M d, Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Decision Form -->
+            {% if can_decide %}
+            <div class="content-card">
+                <div class="card-header">
+                    <i class="bi bi-check2-circle me-2"></i>Make Your Decision
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check border rounded p-3 h-100 decision-option" data-value="APPROVED">
+                                        <input class="form-check-input" type="radio" name="decision" 
+                                               value="APPROVED" id="decisionApprove" required>
+                                        <label class="form-check-label d-block" for="decisionApprove">
+                                            <i class="bi bi-check-circle-fill text-success fs-4 d-block mb-2"></i>
+                                            <strong>Approve</strong>
+                                            <div class="text-muted small">Approve this request</div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check border rounded p-3 h-100 decision-option" data-value="REJECTED">
+                                        <input class="form-check-input" type="radio" name="decision" 
+                                               value="REJECTED" id="decisionReject" required>
+                                        <label class="form-check-label d-block" for="decisionReject">
+                                            <i class="bi bi-x-circle-fill text-danger fs-4 d-block mb-2"></i>
+                                            <strong>Reject</strong>
+                                            <div class="text-muted small">Reject this request</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Comment <span class="reject-required text-danger d-none">*</span></label>
+                            {{ form.comment }}
+                            <div class="form-text">Required for rejection</div>
+                        </div>
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-1"></i>Submit Decision
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Contract Summary -->
+            <div class="info-panel">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-file-text me-2"></i>Contract Summary</h6>
+                </div>
+                <div class="panel-body">
+                    <div class="info-row">
+                        <span class="info-label">Status</span>
+                        <span class="info-value">{{ approval.contract.status|status_badge }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Category</span>
+                        <span class="info-value">{{ approval.contract.category|category_display }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Value</span>
+                        <span class="info-value">
+                            {% if approval.contract.value_amount %}
+                            {{ approval.contract.value_amount|currency_format:approval.contract.currency }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Effective Date</span>
+                        <span class="info-value">{{ approval.contract.effective_date|date:"M d, Y"|default:"-" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">End Date</span>
+                        <span class="info-value">{{ approval.contract.end_date|date:"M d, Y"|default:"-" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Owner</span>
+                        <span class="info-value">
+                            {{ approval.contract.owner.get_full_name|default:approval.contract.owner.username|default:"-" }}
+                        </span>
+                    </div>
+                </div>
+                <div class="panel-body border-top">
+                    <a href="{% url 'contracts:detail' pk=approval.contract.pk %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-eye me-1"></i>View Full Contract
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block contracts_extra_css %}
+<style>
+    .decision-option {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .decision-option:hover {
+        border-color: var(--contracts-accent) !important;
+    }
+    
+    .decision-option:has(input:checked) {
+        border-color: var(--contracts-accent) !important;
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block contracts_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const decisionOptions = document.querySelectorAll('.decision-option');
+    const rejectRequired = document.querySelector('.reject-required');
+    
+    decisionOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            
+            // Toggle required indicator for rejection
+            if (radio.value === 'REJECTED') {
+                rejectRequired.classList.remove('d-none');
+            } else {
+                rejectRequired.classList.add('d-none');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

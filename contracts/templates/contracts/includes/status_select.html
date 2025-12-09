@@ -1,0 +1,8 @@
+<select name="{{ field_name }}" class="form-select">
+    {% for value, label in choices %}
+    <option value="{{ value }}" {% if value == current_status %}selected{% endif %}>
+        {{ label }}
+    </option>
+    {% endfor %}
+</select>
+

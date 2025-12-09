@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% load contracts_extras %}
+{% load static %}
+
+{% block page_title %}Contracts{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'contracts/css/contracts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>Contracts</h1>
+        {% if can_create %}
+        <a href="{% url 'contracts:create' %}?reset=1" class="btn-primary-green">
+            <i class="bi bi-plus"></i> New Contract
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Tabs -->
+    <ul class="nav nav-tabs-custom">
+        <li class="nav-item">
+            <a class="nav-link {% if current_tab == 'draft' %}active{% endif %}" href="?tab=draft">
+                Draft <span class="badge">{{ draft_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if current_tab == 'pending' %}active{% endif %}" href="?tab=pending">
+                Pending <span class="badge">{{ pending_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if current_tab == 'repository' or not current_tab %}active{% endif %}" href="?tab=repository">
+                Repository <span class="badge">{{ repository_count }}</span>
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Filters Bar -->
+    <div class="filters-bar">
+        <div class="search-input-group">
+            <i class="bi bi-search"></i>
+            <form method="get" class="d-flex" style="width: 100%;">
+                <input type="hidden" name="tab" value="{{ current_tab }}">
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Search contracts..." 
+                       value="{{ request.GET.search }}">
+            </form>
+        </div>
+        
+        <select name="bu_team" class="form-select" style="width: auto;" onchange="this.form.submit()">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+            <option value="{{ dept.pk }}" {% if request.GET.bu_team == dept.pk|stringformat:"s" %}selected{% endif %}>
+                {{ dept.name }}
+            </option>
+            {% endfor %}
+        </select>
+        
+        <select name="category" class="form-select" style="width: auto;">
+            <option value="">All Categories</option>
+            {% for value, label in filter_form.fields.category.choices %}
+            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <!-- Contracts Table -->
+    <div class="table-container">
+        {% if contracts %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Contract Number</th>
+                    <th>Name</th>
+                    <th>Customer/Vendor</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Effective Date</th>
+                    <th>Value</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contract in contracts %}
+                <tr onclick="window.location='{% url 'contracts:detail' pk=contract.pk %}'" style="cursor: pointer;">
+                    <td>
+                        <span class="fw-semibold text-primary">{{ contract.contract_number }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ contract.title|truncatechars:40 }}</div>
+                        {% if contract.contract_type %}
+                        <small class="text-muted">{{ contract.contract_type.name }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ contract.customer_or_vendor_name|truncatechars:30 }}</td>
+                    <td>
+                        <span class="text-muted">{{ contract.get_category_display }}</span>
+                    </td>
+                    <td>
+                        <span class="status-indicator {{ contract.status|lower }}">
+                            {{ contract.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {{ contract.effective_date|date:"M d, Y"|default:"-" }}
+                    </td>
+                    <td>
+                        {% if contract.value_amount %}
+                        {{ contract.currency }} {{ contract.value_amount|floatformat:0 }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-link text-muted p-0" type="button" 
+                                    data-bs-toggle="dropdown" onclick="event.stopPropagation();">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'contracts:detail' pk=contract.pk %}">
+                                        <i class="bi bi-eye me-2"></i>View
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'contracts:edit' pk=contract.pk %}">
+                                        <i class="bi bi-pencil me-2"></i>Edit
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="d-flex justify-content-between align-items-center p-3 border-top">
+            <span class="text-muted small">
+                Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }} contracts
+            </span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?tab={{ current_tab }}&page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?tab={{ current_tab }}&page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?tab={{ current_tab }}&page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-file-earmark-text"></i>
+            <h5>No contracts found</h5>
+            <p>
+                {% if current_tab == 'draft' %}
+                You don't have any draft contracts.
+                {% elif current_tab == 'pending' %}
+                No contracts are pending approval.
+                {% else %}
+                Start by creating a new contract.
+                {% endif %}
+            </p>
+            {% if can_create %}
+            <a href="{% url 'contracts:create' %}?reset=1" class="btn-primary-green mt-3">
+                <i class="bi bi-plus"></i> New Contract
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'contracts/js/contracts.js' %}"></script>
+{% endblock %}

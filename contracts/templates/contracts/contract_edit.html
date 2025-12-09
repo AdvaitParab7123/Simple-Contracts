@@ -1,0 +1,207 @@
+{% extends "contracts/base_contracts.html" %}
+{% load contracts_extras %}
+
+{% block contracts_content %}
+<div class="contracts-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'contracts:list' %}">Contracts</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'contracts:detail' pk=object.pk %}">{{ object.contract_number }}</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </nav>
+            <h1>Edit Contract</h1>
+        </div>
+        <a href="{% url 'contracts:detail' pk=object.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </a>
+    </div>
+</div>
+
+<div class="px-4 pb-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="content-card">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="card-body">
+                        <h5 class="mb-4">Basic Information</h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Contract Number</label>
+                                {{ form.contract_number }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                {{ form.status }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Title <span class="text-danger">*</span></label>
+                                {{ form.title }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Category</label>
+                                {{ form.category }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Sub-Category</label>
+                                {{ form.sub_category }}
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-4">Organization Details</h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Organization Entity</label>
+                                {{ form.org_entity }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Region / Country</label>
+                                {{ form.region_country }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">BU / Team</label>
+                                {{ form.bu_team }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contract Type</label>
+                                {{ form.contract_type }}
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-4">Customer / Vendor</h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label">Customer / Vendor Name <span class="text-danger">*</span></label>
+                                {{ form.customer_or_vendor_name }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                {{ form.customer_or_vendor_address }}
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-4">Contract Value</h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label">Value Amount</label>
+                                {{ form.value_amount }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Currency</label>
+                                {{ form.currency }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Opportunity ID</label>
+                                {{ form.opportunity_id }}
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-4">Dates & Renewal</h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Effective Date</label>
+                                {{ form.effective_date }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Date</label>
+                                {{ form.end_date }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ form.auto_renewal }}
+                                    <label class="form-check-label">Auto Renewal</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Renewal Notice Date</label>
+                                {{ form.renewal_notice_date }}
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-4">Assignment & Ownership</h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Assignment Status</label>
+                                {{ form.assignment_status }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Owner</label>
+                                {{ form.owner }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ form.is_confidential }}
+                                    <label class="form-check-label">
+                                        <i class="bi bi-lock me-1"></i>Mark as Confidential
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                {% for field in form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-footer bg-transparent d-flex justify-content-between">
+                        <a href="{% url 'contracts:detail' pk=object.pk %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="info-panel">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-info-circle me-2"></i>Contract Info</h6>
+                </div>
+                <div class="panel-body">
+                    <div class="info-row">
+                        <span class="info-label">Contract #</span>
+                        <span class="info-value"><code>{{ object.contract_number }}</code></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Created</span>
+                        <span class="info-value">{{ object.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Updated</span>
+                        <span class="info-value">{{ object.updated_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Created By</span>
+                        <span class="info-value">{{ object.created_by.get_full_name|default:object.created_by.username }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

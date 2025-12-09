@@ -1,0 +1,442 @@
+{% extends "contracts/base_contracts.html" %}
+{% load contracts_extras %}
+
+{% block contracts_content %}
+<div class="contracts-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1>🚀 Let's create a new contract!</h1>
+            <p class="text-muted mb-0 mt-1">Follow the steps below to set up your contract.</p>
+        </div>
+        <a href="{% url 'contracts:list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </a>
+    </div>
+</div>
+
+<div class="px-4 pb-4 animate-fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <!-- Progress Steps -->
+            <div class="content-card mb-4">
+                <div class="card-body py-4">
+                    <div class="wizard-progress">
+                        {% for s in steps %}
+                        {% if s != 'upload' or wizard_data.method.method == 'upload' %}
+                        <div class="wizard-step {% if forloop.counter0 < current_step_index %}completed{% elif forloop.counter0 == current_step_index %}active{% endif %}">
+                            <div class="step-number">
+                                {% if forloop.counter0 < current_step_index %}
+                                <i class="bi bi-check-lg"></i>
+                                {% else %}
+                                {{ forloop.counter }}
+                                {% endif %}
+                            </div>
+                            <span class="step-label">
+                                {% if s == 'method' %}Method
+                                {% elif s == 'upload' %}Upload
+                                {% elif s == 'name' %}Name
+                                {% elif s == 'basic' %}Basic Info
+                                {% elif s == 'party' %}Party
+                                {% elif s == 'dates' %}Dates
+                                {% elif s == 'value' %}Value
+                                {% elif s == 'owner_tags' %}Finish
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Card -->
+            <div class="content-card">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="current_step" value="{{ step }}">
+                    
+                    <div class="card-body p-4">
+                        {% if step == 'method' %}
+                        <!-- Step 1: Choose Method -->
+                        <h4 class="mb-2 fw-bold">How would you prefer to create your Contract?</h4>
+                        <p class="text-muted mb-4">Choose how you'd like to start.</p>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="method-card p-4 rounded-3 border-2 h-100" data-value="template" 
+                                     style="cursor: pointer; border: 2px solid #e2e8f0; transition: all 0.2s;">
+                                    <div class="text-center py-3">
+                                        <div class="mb-3">
+                                            <i class="bi bi-file-earmark-text fs-1" style="color: #3b82f6;"></i>
+                                        </div>
+                                        <h5 class="fw-bold mb-2">Draft a new contract from pre-existing template</h5>
+                                        <p class="text-muted small mb-0">Start with a template and customize it</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="method-card p-4 rounded-3 border-2 h-100 selected" data-value="upload"
+                                     style="cursor: pointer; border: 2px solid #10b981; transition: all 0.2s; background: rgba(16, 185, 129, 0.05);">
+                                    <div class="text-center py-3">
+                                        <div class="mb-3">
+                                            <i class="bi bi-cloud-arrow-up fs-1" style="color: #10b981;"></i>
+                                        </div>
+                                        <h5 class="fw-bold mb-2">Upload a document</h5>
+                                        <p class="text-muted small mb-0">Please select file less than 20MB<br>
+                                        <span class="text-muted">Please upload pdf, doc(word) or xlsx(excel)</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="method" id="methodInput" value="{{ form.method.value|default:'upload' }}">
+                        
+                        {% elif step == 'upload' %}
+                        <!-- Step 2: Upload Document -->
+                        <h4 class="mb-2 fw-bold">Upload your contract document</h4>
+                        <p class="text-muted mb-4">Drag and drop or click to browse your files.</p>
+                        
+                        <div class="upload-zone p-5 text-center rounded-3 mb-3" id="uploadZone"
+                             style="border: 2px dashed #cbd5e1; background: #f8fafc; position: relative; cursor: pointer; transition: all 0.2s;">
+                            <i class="bi bi-cloud-arrow-up fs-1 text-muted mb-3 d-block"></i>
+                            <p class="mb-2 fw-semibold">Drag and drop your file here</p>
+                            <p class="text-muted small mb-3">or click to browse</p>
+                            <span class="badge bg-light text-muted">PDF, DOC, DOCX, XLSX, XLS (Max 20MB)</span>
+                            {{ form.file }}
+                        </div>
+                        
+                        {% if wizard_data.uploaded_file %}
+                        <div class="alert alert-success d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            File uploaded: <strong class="ms-1">{{ wizard_data.uploaded_file.name }}</strong>
+                        </div>
+                        {% endif %}
+                        
+                        {% elif step == 'name' %}
+                        <!-- Step 3: Name Your Contract -->
+                        <h4 class="mb-2 fw-bold">What name would you prefer for this Contract?</h4>
+                        <p class="text-muted mb-4">Give your contract a clear, descriptive name.</p>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Name your contract <span class="text-danger">*</span></label>
+                            {{ form.title }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="text-muted small mb-2">Suggestions:</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for suggestion in name_suggestions %}
+                                <button type="button" class="btn btn-outline-secondary btn-sm name-suggestion rounded-pill">
+                                    {{ suggestion }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        {% elif step == 'basic' %}
+                        <!-- Step 4: Basic Information -->
+                        <h4 class="mb-2 fw-bold">Basic Contract Information</h4>
+                        <p class="text-muted mb-4">Provide the organizational details for this contract.</p>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Organization Entity</label>
+                                {{ form.org_entity }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Region / Country</label>
+                                {{ form.region_country }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">BU / Team</label>
+                                {{ form.bu_team }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Category</label>
+                                {{ form.category }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Sub-Category (optional)</label>
+                                {{ form.sub_category }}
+                            </div>
+                        </div>
+                        
+                        {% elif step == 'party' %}
+                        <!-- Step 5: Party Information -->
+                        <h4 class="mb-2 fw-bold">Customer / Vendor Information</h4>
+                        <p class="text-muted mb-4">Who is the other party in this contract?</p>
+                        
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <label class="form-label">Customer / Vendor Name <span class="text-danger">*</span></label>
+                                {{ form.customer_or_vendor_name }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                {{ form.customer_or_vendor_address }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Contract Type</label>
+                                {{ form.contract_type }}
+                            </div>
+                        </div>
+                        
+                        {% elif step == 'dates' %}
+                        <!-- Step 6: Contract Dates -->
+                        <h4 class="mb-2 fw-bold">Contract Dates & Renewal</h4>
+                        <p class="text-muted mb-4">When does this contract take effect?</p>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Effective Date <span class="text-danger">*</span></label>
+                                {{ form.effective_date }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Date</label>
+                                {{ form.end_date }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ form.auto_renewal }}
+                                    <label class="form-check-label">Enable Auto Renewal</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 renewal-date-field" style="display: none;">
+                                <label class="form-label">Renewal Notice Date</label>
+                                {{ form.renewal_notice_date }}
+                                <div class="form-text">Date by which renewal notice must be given</div>
+                            </div>
+                        </div>
+                        
+                        {% elif step == 'value' %}
+                        <!-- Step 7: Contract Value -->
+                        <h4 class="mb-2 fw-bold">Contract Value & Opportunity</h4>
+                        <p class="text-muted mb-4">What is the value of this contract?</p>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-8">
+                                <label class="form-label">Contract Value</label>
+                                <input type="number" name="value_amount" class="form-control" 
+                                       placeholder="0.00" step="0.01" min="0"
+                                       value="{{ wizard_data.value.value_amount|default:'' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Currency</label>
+                                <select name="currency" class="form-select">
+                                    <option value="INR" {% if wizard_data.value.currency == 'INR' %}selected{% endif %}>INR - Indian Rupee</option>
+                                    <option value="USD" {% if wizard_data.value.currency == 'USD' %}selected{% endif %}>USD - US Dollar</option>
+                                    <option value="EUR" {% if wizard_data.value.currency == 'EUR' %}selected{% endif %}>EUR - Euro</option>
+                                    <option value="GBP" {% if wizard_data.value.currency == 'GBP' %}selected{% endif %}>GBP - British Pound</option>
+                                    <option value="AED" {% if wizard_data.value.currency == 'AED' %}selected{% endif %}>AED - UAE Dirham</option>
+                                    <option value="SGD" {% if wizard_data.value.currency == 'SGD' %}selected{% endif %}>SGD - Singapore Dollar</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Opportunity ID</label>
+                                <input type="text" name="opportunity_id" class="form-control" 
+                                       placeholder="CRM Opportunity ID"
+                                       value="{{ wizard_data.value.opportunity_id|default:'' }}">
+                                <div class="form-text">Link to CRM opportunity if applicable</div>
+                            </div>
+                        </div>
+                        
+                        {% elif step == 'owner_tags' %}
+                        <!-- Step 8: Owner & Tags -->
+                        <h4 class="mb-2 fw-bold">Contract Owner & Tags</h4>
+                        <p class="text-muted mb-4">Almost done! Assign ownership and add tags.</p>
+                        
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <label class="form-label">Contract Owner</label>
+                                {{ form.owner }}
+                                <div class="form-text">Leave empty to assign yourself as owner</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Tags</label>
+                                <div class="p-3 rounded-3" style="border: 2px solid #e2e8f0; background: #f8fafc;">
+                                    {% for checkbox in form.tags %}
+                                    <div class="form-check form-check-inline">
+                                        {{ checkbox.tag }}
+                                        <label class="form-check-label">{{ checkbox.choice_label }}</label>
+                                    </div>
+                                    {% empty %}
+                                    <p class="text-muted mb-0 small">No tags available. You can add tags in Admin settings.</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ form.is_confidential }}
+                                    <label class="form-check-label">
+                                        <i class="bi bi-lock me-1"></i>Mark as Confidential
+                                    </label>
+                                    <div class="form-text">Confidential contracts are only visible to owner and shared users</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% endif %}
+                        
+                        <!-- Form Errors -->
+                        {% if form.errors %}
+                        <div class="alert alert-danger mt-4">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Please fix the following errors:</strong>
+                            <ul class="mb-0 mt-2">
+                                {% for field in form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-footer d-flex justify-content-between align-items-center py-3 px-4">
+                        <div>
+                            {% if step != 'method' %}
+                            <button type="submit" name="action" value="back" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-2">
+                            {% if step != 'method' %}
+                            <button type="submit" name="action" value="save_draft" class="btn btn-outline-primary">
+                                <i class="bi bi-save me-1"></i>Save as Draft
+                            </button>
+                            {% endif %}
+                            
+                            {% if step == 'owner_tags' %}
+                            <button type="submit" name="action" value="next" class="btn btn-contracts-primary">
+                                <i class="bi bi-check-lg me-1"></i>Create Contract
+                            </button>
+                            {% else %}
+                            <button type="submit" name="action" value="next" class="btn btn-primary">
+                                Next<i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block contracts_extra_css %}
+<style>
+    .method-card:hover {
+        border-color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.05);
+    }
+    
+    .method-card.selected {
+        border-color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.05);
+    }
+    
+    .upload-zone:hover {
+        border-color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.02) !important;
+    }
+    
+    .upload-zone.dragover {
+        border-color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.05) !important;
+    }
+    
+    .upload-zone input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block contracts_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Method selection
+    const methodCards = document.querySelectorAll('.method-card');
+    const methodInput = document.getElementById('methodInput');
+    
+    methodCards.forEach(card => {
+        card.addEventListener('click', function() {
+            methodCards.forEach(c => {
+                c.classList.remove('selected');
+                c.style.borderColor = '#e2e8f0';
+                c.style.background = '';
+            });
+            this.classList.add('selected');
+            this.style.borderColor = '#10b981';
+            this.style.background = 'rgba(16, 185, 129, 0.05)';
+            if (methodInput) {
+                methodInput.value = this.dataset.value;
+            }
+        });
+    });
+    
+    // Name suggestions
+    const suggestions = document.querySelectorAll('.name-suggestion');
+    const titleInput = document.querySelector('[name="title"]');
+    
+    suggestions.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (titleInput) {
+                titleInput.value = this.textContent.trim();
+                titleInput.focus();
+            }
+        });
+    });
+    
+    // File upload drag and drop
+    const uploadZone = document.getElementById('uploadZone');
+    
+    if (uploadZone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => {
+                uploadZone.classList.add('dragover');
+            }, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => {
+                uploadZone.classList.remove('dragover');
+            }, false);
+        });
+    }
+    
+    // Toggle renewal date field
+    const autoRenewal = document.querySelector('[name="auto_renewal"]');
+    const renewalDateField = document.querySelector('.renewal-date-field');
+    
+    if (autoRenewal && renewalDateField) {
+        function toggleRenewalDate() {
+            renewalDateField.style.display = autoRenewal.checked ? 'block' : 'none';
+        }
+        
+        autoRenewal.addEventListener('change', toggleRenewalDate);
+        toggleRenewalDate();
+    }
+});
+</script>
+{% endblock %}

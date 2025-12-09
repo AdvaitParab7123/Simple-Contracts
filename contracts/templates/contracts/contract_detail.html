@@ -1,0 +1,611 @@
+{% extends "contracts/base_contracts.html" %}
+{% load contracts_extras %}
+
+{% block contracts_content %}
+<div class="contracts-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'contracts:list' %}">Contracts</a></li>
+                    <li class="breadcrumb-item active">{{ contract.contract_number }}</li>
+                </ol>
+            </nav>
+            <h1 class="mb-0">
+                {{ contract.title }}
+                {% if contract.is_confidential %}
+                <i class="bi bi-lock-fill text-muted fs-5" title="Confidential"></i>
+                {% endif %}
+            </h1>
+        </div>
+        <div class="d-flex gap-2">
+            {% if can_edit_contract %}
+            <a href="{% url 'contracts:edit' pk=contract.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil me-1"></i>Edit
+            </a>
+            {% endif %}
+            {% if primary_file %}
+            <a href="{% url 'contracts:file_download' pk=contract.pk file_id=primary_file.pk %}" 
+               class="btn btn-primary">
+                <i class="bi bi-download me-1"></i>Download
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="px-4 pb-4">
+    <div class="row">
+        <!-- Main Content Area -->
+        <div class="col-lg-8">
+            <!-- Status Bar -->
+            <div class="content-card mb-4">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="text-muted me-2">Status:</span>
+                            {{ contract.status|status_badge }}
+                        </div>
+                        <div class="col-auto">
+                            <span class="text-muted me-2">Assignment:</span>
+                            {{ contract.assignment_status|assignment_badge }}
+                        </div>
+                        <div class="col-auto">
+                            <span class="text-muted me-2">Category:</span>
+                            <span class="badge bg-light text-dark">{{ contract.category|category_display }}</span>
+                        </div>
+                        {% if can_change_status %}
+                        <div class="col-auto ms-auto">
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#statusModal">
+                                <i class="bi bi-arrow-repeat me-1"></i>Change Status
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Document Viewer -->
+            <div class="content-card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-file-earmark-text me-2"></i>Contract Document</span>
+                    {% if can_upload_files %}
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
+                        <i class="bi bi-upload me-1"></i>Upload File
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if primary_file %}
+                    <div class="document-viewer">
+                        {% if primary_file.mime_type == 'application/pdf' or primary_file.original_filename|slice:"-4:" == '.pdf' %}
+                        <object data="{{ primary_file.file.url }}" type="application/pdf">
+                            <p>Unable to display PDF. <a href="{{ primary_file.file.url }}" target="_blank">Download</a> to view.</p>
+                        </object>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-text fs-1 text-muted mb-3 d-block"></i>
+                            <p class="mb-2">{{ primary_file.original_filename }}</p>
+                            <p class="text-muted small mb-3">{{ primary_file.file_size|file_size_format }}</p>
+                            <a href="{% url 'contracts:file_download' pk=contract.pk file_id=primary_file.pk %}" 
+                               class="btn btn-primary">
+                                <i class="bi bi-download me-1"></i>Download to View
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="document-viewer">
+                        <div class="text-center">
+                            <i class="bi bi-file-earmark-x fs-1 text-muted mb-3 d-block"></i>
+                            <p class="text-muted mb-3">No document uploaded yet</p>
+                            {% if can_upload_files %}
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
+                                <i class="bi bi-upload me-1"></i>Upload Document
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if contract.files.count > 1 %}
+                <div class="card-footer bg-transparent">
+                    <div class="small text-muted mb-2">All Files ({{ contract.files.count }})</div>
+                    <div class="list-group list-group-flush">
+                        {% for file in contract.files.all %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <i class="bi bi-file-earmark me-2"></i>
+                                {{ file.original_filename|truncate_middle:40 }}
+                                {% if file.is_primary %}
+                                <span class="badge bg-primary ms-1">Primary</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <span class="text-muted small me-2">{{ file.file_size|file_size_format }}</span>
+                                <a href="{% url 'contracts:file_download' pk=contract.pk file_id=file.pk %}" 
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Tabs for Additional Info -->
+            <div class="content-card">
+                <ul class="nav nav-tabs px-3 pt-2" id="detailTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#clauses" type="button">
+                            Clauses <span class="badge bg-secondary">{{ contract.clauses.count }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#deviations" type="button">
+                            Deviations <span class="badge bg-warning text-dark">{{ contract.deviations.count }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#risks" type="button">
+                            Risks <span class="badge bg-danger">{{ contract.risks.count }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#versions" type="button">
+                            Versions <span class="badge bg-info">{{ contract.versions.count }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity" type="button">
+                            Activity
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content p-3">
+                    <!-- Clauses Tab -->
+                    <div class="tab-pane fade show active" id="clauses" role="tabpanel">
+                        {% if can_manage_clauses %}
+                        <div class="mb-3">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addClauseModal">
+                                <i class="bi bi-plus-lg me-1"></i>Add Clause
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if contract.clauses.all %}
+                        <div class="list-group">
+                            {% for clause in contract.clauses.all %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">{{ clause.label }}</h6>
+                                    <div>
+                                        {{ clause.risk_level|risk_badge }}
+                                        {% if clause.is_from_playbook %}
+                                        <span class="badge bg-info ms-1">Playbook</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <p class="mb-0 small text-muted">{{ clause.text|truncatewords:50 }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-list-check fs-1 d-block mb-2"></i>
+                            No clauses added yet
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Deviations Tab -->
+                    <div class="tab-pane fade" id="deviations" role="tabpanel">
+                        {% if can_manage_deviations %}
+                        <div class="mb-3">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addDeviationModal">
+                                <i class="bi bi-plus-lg me-1"></i>Add Deviation
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if contract.deviations.all %}
+                        <div class="list-group">
+                            {% for deviation in contract.deviations.all %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="small text-muted">
+                                        {% if deviation.clause %}From: {{ deviation.clause.label }}{% endif %}
+                                    </span>
+                                    {{ deviation.risk_level|risk_badge }}
+                                </div>
+                                <p class="mb-1">{{ deviation.description }}</p>
+                                {% if deviation.justification %}
+                                <p class="small text-muted mb-0">
+                                    <strong>Justification:</strong> {{ deviation.justification }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-exclamation-triangle fs-1 d-block mb-2"></i>
+                            No deviations recorded
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Risks Tab -->
+                    <div class="tab-pane fade" id="risks" role="tabpanel">
+                        {% if can_manage_risks %}
+                        <div class="mb-3">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addRiskModal">
+                                <i class="bi bi-plus-lg me-1"></i>Add Risk
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if contract.risks.all %}
+                        <div class="list-group">
+                            {% for risk in contract.risks.all %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-{{ risk.status|lower }}">{{ risk.status }}</span>
+                                    {{ risk.severity|risk_badge }}
+                                </div>
+                                <p class="mb-1">{{ risk.description }}</p>
+                                {% if risk.mitigation %}
+                                <p class="small text-muted mb-0">
+                                    <strong>Mitigation:</strong> {{ risk.mitigation }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-shield-check fs-1 d-block mb-2"></i>
+                            No risk items identified
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Versions Tab -->
+                    <div class="tab-pane fade" id="versions" role="tabpanel">
+                        {% if can_add_version %}
+                        <div class="mb-3">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addVersionModal">
+                                <i class="bi bi-plus-lg me-1"></i>Add Version
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if contract.versions.all %}
+                        <div class="list-group">
+                            {% for version in contract.versions.all %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>v{{ version.version_number }}</strong> - {{ version.label }}
+                                    <div class="small text-muted">
+                                        {{ version.created_by.get_full_name|default:version.created_by.username }} 
+                                        on {{ version.created_at|date:"M d, Y H:i" }}
+                                    </div>
+                                </div>
+                                {% if version.file %}
+                                <a href="{{ version.file.url }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-layers fs-1 d-block mb-2"></i>
+                            No versions recorded
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Activity Tab -->
+                    <div class="tab-pane fade" id="activity" role="tabpanel">
+                        {% if audit_logs %}
+                        {% for log in audit_logs %}
+                        <div class="activity-item d-flex align-items-start">
+                            <div class="activity-icon {{ log.action|audit_action_color }} me-3">
+                                <i class="bi {{ log.action|audit_action_icon }}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ log.actor.get_full_name|default:log.actor.username }}</strong>
+                                        <span class="text-muted">{{ log.get_action_display }}</span>
+                                    </div>
+                                    <small class="text-muted">{{ log.created_at|date:"M d, Y H:i" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-clock-history fs-1 d-block mb-2"></i>
+                            No activity recorded
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Key Information -->
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-info-circle me-2"></i>Key Information</h6>
+                </div>
+                <div class="panel-body">
+                    <div class="info-row">
+                        <span class="info-label">Contract Number</span>
+                        <span class="info-value"><code>{{ contract.contract_number }}</code></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Type</span>
+                        <span class="info-value">{{ contract.contract_type.name|default:"-" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Category</span>
+                        <span class="info-value">{{ contract.category|category_display }}</span>
+                    </div>
+                    {% if contract.sub_category %}
+                    <div class="info-row">
+                        <span class="info-label">Sub-Category</span>
+                        <span class="info-value">{{ contract.sub_category }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-row">
+                        <span class="info-label">Organization</span>
+                        <span class="info-value">{{ contract.org_entity|default:"-" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Region</span>
+                        <span class="info-value">{{ contract.region_country|default:"-" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">BU/Team</span>
+                        <span class="info-value">{{ contract.bu_team.name|default:"-" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Customer/Vendor -->
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-building me-2"></i>Customer / Vendor</h6>
+                </div>
+                <div class="panel-body">
+                    <div class="fw-medium mb-2">{{ contract.customer_or_vendor_name }}</div>
+                    {% if contract.customer_or_vendor_address %}
+                    <div class="small text-muted">{{ contract.customer_or_vendor_address|linebreaksbr }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Contract Value -->
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-currency-exchange me-2"></i>Contract Value</h6>
+                </div>
+                <div class="panel-body">
+                    {% if contract.value_amount %}
+                    <div class="h4 mb-0">{{ contract.value_amount|currency_format:contract.currency }}</div>
+                    {% else %}
+                    <div class="text-muted">Not specified</div>
+                    {% endif %}
+                    {% if contract.opportunity_id %}
+                    <div class="small text-muted mt-2">
+                        Opportunity ID: {{ contract.opportunity_id }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Dates -->
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-calendar me-2"></i>Contract Dates</h6>
+                </div>
+                <div class="panel-body">
+                    <div class="info-row">
+                        <span class="info-label">Effective Date</span>
+                        <span class="info-value">{{ contract.effective_date|date:"M d, Y"|default:"-" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">End Date</span>
+                        <span class="info-value {{ contract.end_date|expiry_class }}">
+                            {{ contract.end_date|date:"M d, Y"|default:"-" }}
+                            {% if contract.end_date %}
+                            <br><small>({{ contract.end_date|days_until }} days)</small>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Auto Renewal</span>
+                        <span class="info-value">
+                            {% if contract.auto_renewal %}
+                            <i class="bi bi-check-circle-fill text-success"></i> Yes
+                            {% else %}
+                            <i class="bi bi-x-circle text-muted"></i> No
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if contract.renewal_notice_date %}
+                    <div class="info-row">
+                        <span class="info-label">Renewal Notice</span>
+                        <span class="info-value {{ contract.renewal_notice_date|expiry_class }}">
+                            {{ contract.renewal_notice_date|date:"M d, Y" }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Owner -->
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-person me-2"></i>Owner</h6>
+                </div>
+                <div class="panel-body">
+                    {% if contract.owner %}
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-2">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div>
+                            <div class="fw-medium">{{ contract.owner.get_full_name|default:contract.owner.username }}</div>
+                            <div class="small text-muted">{{ contract.owner.email }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">No owner assigned</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Approvals -->
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-check2-square me-2"></i>Approvals</h6>
+                    {% if can_manage_approvals %}
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#requestApprovalModal">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="panel-body p-0">
+                    {% if contract.approvals.all %}
+                    <div class="list-group list-group-flush">
+                        {% for approval in contract.approvals.all %}
+                        <a href="{% url 'contracts:approval_detail' pk=approval.pk %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small">{{ approval.approver.get_full_name|default:approval.approver.username }}</div>
+                                </div>
+                                {{ approval.status|approval_status_badge }}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-center text-muted small">
+                        No approval requests
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Signatures -->
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-pen me-2"></i>Signatures</h6>
+                    {% if can_manage_signatures %}
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addSignatureModal">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="panel-body p-0">
+                    {% if contract.signatures.all %}
+                    <div class="list-group list-group-flush">
+                        {% for sig in contract.signatures.all %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-medium">{{ sig.signatory_name }}</div>
+                                    <div class="small text-muted">{{ sig.party|party_display }}</div>
+                                </div>
+                                <div class="text-end">
+                                    {% if sig.signed_at %}
+                                    <span class="badge bg-success">Signed</span>
+                                    <div class="small text-muted">{{ sig.signed_at|date:"M d, Y" }}</div>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-center text-muted small">
+                        No signature records
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Tags -->
+            {% if contract.tags.all %}
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-tags me-2"></i>Tags</h6>
+                </div>
+                <div class="panel-body">
+                    {% for tag in contract.tags.all %}
+                    <span class="tag-badge me-1 mb-1" style="background-color: {{ tag.color }}20; color: {{ tag.color }};">
+                        {{ tag.name }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Sharing -->
+            {% if can_share_contract %}
+            <div class="info-panel mb-3">
+                <div class="panel-header">
+                    <h6 class="panel-title"><i class="bi bi-share me-2"></i>Sharing</h6>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#shareModal">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+                <div class="panel-body p-0">
+                    {% if contract.shares.all %}
+                    <div class="list-group list-group-flush">
+                        {% for share in contract.shares.all %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if share.shared_with_user %}
+                                <i class="bi bi-person me-1"></i>
+                                {{ share.shared_with_user.get_full_name|default:share.shared_with_user.username }}
+                                {% else %}
+                                <i class="bi bi-people me-1"></i>
+                                {{ share.shared_with_department.name }}
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-secondary">{{ share.access_level }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-center text-muted small">
+                        Not shared with anyone
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+{% include "contracts/includes/modals.html" %}
+
+{% endblock %}
+

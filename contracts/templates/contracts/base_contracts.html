@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+{% load contracts_extras %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'contracts/css/contracts.css' %}">
+{% block contracts_extra_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    {% if messages %}
+    <div class="px-4 pt-4">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+            <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% block contracts_content %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'contracts/js/contracts.js' %}"></script>
+{% block contracts_extra_js %}{% endblock %}
+{% endblock %}
