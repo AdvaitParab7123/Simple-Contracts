@@ -301,7 +301,14 @@ class ContractCreateWizardView(LoginRequiredMixin, View):
         
         if form.is_valid():
             # Store step data in session
-            wizard_data[step] = form.cleaned_data
+            # Convert date objects to ISO format strings for JSON serialization
+            cleaned_data = {}
+            for key, value in form.cleaned_data.items():
+                if hasattr(value, 'isoformat'):  # date or datetime objects
+                    cleaned_data[key] = value.isoformat()
+                else:
+                    cleaned_data[key] = value
+            wizard_data[step] = cleaned_data
             
             # Handle file upload specially
             if step == 'upload' and 'file' in request.FILES:
@@ -361,6 +368,18 @@ class ContractCreateWizardView(LoginRequiredMixin, View):
         except (ValueError, TypeError):
             return None
     
+    def _parse_date(self, value):
+        """Safely parse a date value from ISO format string"""
+        if value is None or value == '':
+            return None
+        if hasattr(value, 'isoformat'):  # Already a date object
+            return value
+        try:
+            from datetime import date
+            return date.fromisoformat(str(value))
+        except (ValueError, TypeError):
+            return None
+    
     def _save_contract(self, request, wizard_data, as_draft=True):
         """Create the contract from wizard data"""
         
@@ -376,10 +395,10 @@ class ContractCreateWizardView(LoginRequiredMixin, View):
             'customer_or_vendor_name': wizard_data.get('party', {}).get('customer_or_vendor_name', ''),
             'customer_or_vendor_address': wizard_data.get('party', {}).get('customer_or_vendor_address', ''),
             'contract_type': wizard_data.get('party', {}).get('contract_type'),
-            'effective_date': wizard_data.get('dates', {}).get('effective_date'),
-            'end_date': wizard_data.get('dates', {}).get('end_date'),
+            'effective_date': self._parse_date(wizard_data.get('dates', {}).get('effective_date')),
+            'end_date': self._parse_date(wizard_data.get('dates', {}).get('end_date')),
             'auto_renewal': wizard_data.get('dates', {}).get('auto_renewal', False),
-            'renewal_notice_date': wizard_data.get('dates', {}).get('renewal_notice_date'),
+            'renewal_notice_date': self._parse_date(wizard_data.get('dates', {}).get('renewal_notice_date')),
             'value_amount': self._parse_decimal(wizard_data.get('value', {}).get('value_amount')),
             'currency': wizard_data.get('value', {}).get('currency', 'INR'),
             'opportunity_id': wizard_data.get('value', {}).get('opportunity_id', ''),

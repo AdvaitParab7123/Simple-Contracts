@@ -1,174 +1,215 @@
-{% extends "base.html" %}
+{% extends "contracts/base_contracts.html" %}
 {% load contracts_extras %}
-{% load static %}
 
-{% block page_title %}Additional Approvals{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'contracts/css/contracts.css' %}">
-{% endblock %}
-
-{% block content %}
-<div class="page-container">
-    <!-- Page Header -->
-    <div class="page-header">
-        <h1>Additional Approvals</h1>
+{% block contracts_content %}
+<!-- Header -->
+<div class="contracts-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Approvals</h1>
+            <p class="text-muted mb-0 small">Review and manage approval requests</p>
+        </div>
     </div>
-    
-    <!-- Filters Bar -->
-    <div class="filters-bar">
-        <div class="search-input-group">
-            <i class="bi bi-search"></i>
-            <form method="get" class="d-flex" style="width: 100%;">
+</div>
+
+<div class="p-4">
+    <!-- Filters -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="btn-group" role="group">
+            <a href="?status=" class="btn {% if not request.GET.status %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                All
+            </a>
+            <a href="?status=PENDING" class="btn {% if request.GET.status == 'PENDING' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                Pending
+            </a>
+            <a href="?status=APPROVED" class="btn {% if request.GET.status == 'APPROVED' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                Approved
+            </a>
+            <a href="?status=REJECTED" class="btn {% if request.GET.status == 'REJECTED' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                Rejected
+            </a>
+        </div>
+
+        <form method="get" class="d-flex gap-2 align-items-center">
+            {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+            <div class="position-relative">
+                <i class="bi bi-search position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%);"></i>
                 <input type="text" name="search" class="form-control" 
-                       placeholder="Search approvals..." 
-                       value="{{ request.GET.search }}">
-            </form>
-        </div>
-        
-        <select name="status" class="form-select" style="width: auto;">
-            <option value="">All Status</option>
-            <option value="PENDING" {% if request.GET.status == 'PENDING' %}selected{% endif %}>Pending</option>
-            <option value="APPROVED" {% if request.GET.status == 'APPROVED' %}selected{% endif %}>Approved</option>
-            <option value="REJECTED" {% if request.GET.status == 'REJECTED' %}selected{% endif %}>Rejected</option>
-        </select>
-        
-        <div class="form-check ms-3">
-            <input class="form-check-input" type="checkbox" name="assigned_to_me" id="assignedToMe"
-                   {% if request.GET.assigned_to_me %}checked{% endif %}>
-            <label class="form-check-label" for="assignedToMe">
-                Assigned to me
-            </label>
-        </div>
+                       placeholder="Search..." 
+                       value="{{ request.GET.search }}"
+                       style="padding-left: 36px; width: 200px;">
+            </div>
+        </form>
     </div>
-    
-    <!-- Approvals Table -->
-    <div class="table-container">
-        {% if approvals %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Contract</th>
-                    <th>Requested By</th>
-                    <th>Approver</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Due Date</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for approval in approvals %}
-                <tr>
-                    <td>
-                        <a href="{% url 'contracts:detail' pk=approval.contract.pk %}" class="text-decoration-none">
-                            <div class="fw-semibold text-primary">{{ approval.contract.title|truncatechars:40 }}</div>
-                            <small class="text-muted">{{ approval.contract.contract_number }}</small>
-                        </a>
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="user-avatar-sm">
-                                {{ approval.requested_by.first_name|slice:":1"|upper }}{{ approval.requested_by.last_name|slice:":1"|upper }}
+
+    <!-- Approvals List -->
+    {% if approvals %}
+    <div class="content-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 35%;">Contract</th>
+                        <th style="width: 18%;">Requested By</th>
+                        <th style="width: 18%;">Approver</th>
+                        <th style="width: 12%;">Status</th>
+                        <th style="width: 12%;">Date</th>
+                        <th style="width: 5%;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for approval in approvals %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'contracts:detail' pk=approval.contract.pk %}" class="text-decoration-none">
+                                <div class="fw-medium text-dark">{{ approval.contract.title|truncatechars:40 }}</div>
+                                <div class="text-muted small">{{ approval.contract.contract_number }}</div>
+                            </a>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="user-avatar">
+                                    {{ approval.requested_by.first_name|slice:":1"|upper|default:"U" }}
+                                </div>
+                                <span class="small">{{ approval.requested_by.get_full_name|default:approval.requested_by.username }}</span>
                             </div>
-                            <span>{{ approval.requested_by.get_full_name|default:approval.requested_by.username }}</span>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="user-avatar-sm">
-                                {{ approval.approver.first_name|slice:":1"|upper }}{{ approval.approver.last_name|slice:":1"|upper }}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="user-avatar">
+                                    {{ approval.approver.first_name|slice:":1"|upper|default:"U" }}
+                                </div>
+                                <span class="small">{{ approval.approver.get_full_name|default:approval.approver.username }}</span>
                             </div>
-                            <span>{{ approval.approver.get_full_name|default:approval.approver.username }}</span>
-                        </div>
-                    </td>
-                    <td>
-                        {% if approval.status == 'PENDING' %}
-                        <span class="badge badge-pending">Pending</span>
-                        {% elif approval.status == 'APPROVED' %}
-                        <span class="badge badge-active">Approved</span>
-                        {% elif approval.status == 'REJECTED' %}
-                        <span class="badge badge-expired">Rejected</span>
-                        {% else %}
-                        <span class="badge badge-draft">{{ approval.get_status_display }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-muted">{{ approval.created_at|date:"M d, Y" }}</td>
-                    <td>
-                        {% if approval.due_date %}
-                        <span class="{% if approval.is_overdue %}text-danger{% endif %}">
-                            {{ approval.due_date|date:"M d, Y" }}
-                        </span>
-                        {% else %}
-                        -
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{% url 'contracts:approval_detail' pk=approval.pk %}" 
-                           class="btn-primary-green btn-sm">
-                            {% if approval.status == 'PENDING' and approval.approver == request.user %}
-                            Review
-                            {% else %}
-                            View
-                            {% endif %}
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
+                        </td>
+                        <td>
+                            {{ approval.status|approval_status_badge }}
+                        </td>
+                        <td>
+                            <span class="text-muted small">{{ approval.created_at|date:"M d, Y" }}</span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'contracts:approval_detail' pk=approval.pk %}" class="btn btn-sm {% if approval.status == 'PENDING' and approval.approver == request.user %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                                {% if approval.status == 'PENDING' and approval.approver == request.user %}
+                                Review
+                                {% else %}
+                                View
+                                {% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
         <!-- Pagination -->
         {% if page_obj.has_other_pages %}
-        <div class="d-flex justify-content-between align-items-center p-3 border-top">
+        <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top">
             <span class="text-muted small">
-                Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }} approvals
+                {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
             </span>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
                     </li>
                     {% endif %}
-                    
                     {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
             </nav>
         </div>
         {% endif %}
-        
-        {% else %}
-        <div class="empty-state">
-            <i class="bi bi-check2-square"></i>
-            <h5>No approvals found</h5>
-            <p>There are no approval requests matching your filters.</p>
-        </div>
-        {% endif %}
     </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="content-card">
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="bi bi-check2-square" style="font-size: 3rem; color: #d1d5db;"></i>
+            </div>
+            <h5 class="fw-medium text-dark mb-2">No approvals found</h5>
+            <p class="text-muted mb-0" style="max-width: 300px; margin: 0 auto;">
+                There are no approval requests matching your criteria.
+            </p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <style>
-.user-avatar-sm {
+.user-avatar {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--primary-green);
+    background: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     color: white;
     flex-shrink: 0;
 }
-</style>
-{% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'contracts/js/contracts.js' %}"></script>
+.btn-group .btn {
+    border-radius: 6px;
+}
+
+.btn-group .btn:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.btn-group .btn:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
+}
+
+.table > thead > tr > th {
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    padding: 0.75rem 1rem;
+}
+
+.table > tbody > tr > td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+}
+
+.table > tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+.table > tbody > tr:hover {
+    background: rgba(5, 150, 105, 0.02);
+}
+
+.pagination .page-link {
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.375rem 0.75rem;
+}
+
+.pagination .page-link:hover {
+    background: var(--bg-main);
+}
+</style>
 {% endblock %}
