@@ -7,10 +7,14 @@ Include this in your main urls.py:
 
 from django.urls import path
 from . import views
+from . import chatbot
 
 app_name = 'contracts'
 
 urlpatterns = [
+    # Chatbot API
+    path('api/chat/', chatbot.chat_api, name='chat_api'),
+    
     # Dashboard
     path('', views.DashboardView.as_view(), name='dashboard'),
     
